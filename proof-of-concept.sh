@@ -61,7 +61,7 @@ curl -o "${DATA}/freeways_and_forms.html" \
 
 # Visit the main detector_health page for chosen freeway to get the s_time_id
 curl -o "${DATA}/${NODE}_${CONTENT}_${FWY}_${DIR}.html" -b "$COOKIES" \
-    -A "Mozilla/5.0" "$BASEURL/?dnode=${NODE}&content=${CONTENT}&${LN}"
+    -A "Mozilla/5.0" "${BASEURL}/?dnode=${NODE}&content=${CONTENT}&${LN}"
 
 # Extract the s_time_id from HTML using a regular expression
 UDATE=$(perl -wnl -e 's/name="s_time_id" value="(\d+)"/$1/g and print "$1"' \
