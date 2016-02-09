@@ -8,6 +8,7 @@
 
 # Configure
 DATA='data'
+
 USERNAME='nobody@example.com'
 PASSWORD='s3kr!t'
 BASEURL='http://pems.dot.ca.gov'
