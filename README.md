@@ -2,7 +2,8 @@
 
 ## Description
 
-Getting data from the State of California PeMS website using RCurl.
+Getting data from the State of California [PeMS](http://pems.dot.ca.gov) 
+website using [RCurl](https://cran.r-project.org/web/packages/RCurl/index.html).
 
 ## Purpose
 
@@ -24,8 +25,9 @@ be using.
 
 ## Methods
 
-A "proof of concept" script written in Bash is used to test the use of cURL
-for programatically retrieving the data from the website.
+A "proof of concept" [Bash](https://www.gnu.org/software/bash/) script is used 
+to test the use of [cURL](https://curl.haxx.se/) for programatically 
+retrieving the data from the website.
 
 Such an approach is needed because the website interface would otherwise
 require an inordinate amount of tedious clicking to retrieve data for
@@ -33,5 +35,6 @@ many freeways, senssors, and dates. Additionally, one would then have to
 combine multiple files to produce the desired dataset, adding extra columns
 to capture the query values along the way. 
 
-The intent is to automate all of this work through the use of an R script. The
-cURL commands from the Bash script will be recoding in R using RCurl.
+The intent is to automate all of this work through the use of an 
+[R](https://www.r-project.org/) script. The cURL commands from the Bash script 
+will be recoding in R using RCurl.
