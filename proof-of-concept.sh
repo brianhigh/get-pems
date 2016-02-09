@@ -17,8 +17,8 @@ DATA='data'
 USERNAME='nobody@example.com'
 PASSWORD='s3kr!t'
 BASEURL='http://pems.dot.ca.gov'
-USERAGENT='Mozilla/5.0'
-COOKIES='cookies.txt'
+USERAGENT='Mozilla/5.0'          # https://en.wikipedia.org/wiki/User_agent
+COOKIES='cookies.txt'            # https://en.wikipedia.org/wiki/HTTP_cookie
 
 # Page configuration - query specification for type of report page
 FORM='1'
