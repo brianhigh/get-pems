@@ -57,11 +57,11 @@ mkdir -p "$DATA"
 # Visit home page to get cookie
 curl -o "${DATA}/freeways_and_forms.html" \
     "$BASEURL" -c "$COOKIES" -A "$USERAGENT" \
-    --data "redirect=&username=$USERNAME&password=$PASSWORD&login=Login"
+    --data "redirect=&username=${USERNAME}&password=${PASSWORD}&login=Login"
 
 # Visit the main detector_health page for chosen freeway to get the s_time_id
 curl -o "${DATA}/${NODE}_${CONTENT}_${FWY}_${DIR}.html" -b "$COOKIES" \
-    -A "Mozilla/5.0" "$BASEURL/?dnode=${NODE}&content=${CONTENT}&${LANES}"
+    -A "Mozilla/5.0" "$BASEURL/?dnode=${NODE}&content=${CONTENT}&${LN}"
 
 # Extract the s_time_id from HTML using a regular expression
 UDATE=$(perl -wnl -e 's/name="s_time_id" value="(\d+)"/$1/g and print "$1"' \
