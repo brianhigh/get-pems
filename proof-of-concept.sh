@@ -42,7 +42,7 @@ curl -o "${DATA}/freeways_and_forms.html" \
     --data "redirect=&username=$USERNAME&password=$PASSWORD&login=Login"
 
 # Visit the main detector_health page for chosen freeway to get the s_time_id
-curl -o "${DATA}/${NODE}_${CONTENT}_${FWY}_${DIR}.html" -b cookies.txt \
+curl -o "${DATA}/${NODE}_${CONTENT}_${FWY}_${DIR}.html" -b "$COOKIES" \
     -A "Mozilla/5.0" "$BASEURL/?dnode=${NODE}&content=${CONTENT}&${ROAD}"
 
 # Extract the s_time_id from HTML using a regular expression
@@ -56,3 +56,4 @@ DEF='eqpo=&tag=&st_cd=on&st_ch=on&st_ff=on&st_hv=on&st_ml=on&st_fr=on&st_or=on'
 curl -o "${DATA}/${NODE}_${CONTENT}_${FWY}_${DIR}_${YEAR}${MONTH}${DAY}.tsv" \
     -b "$COOKIES" -A "$USERAGENT" \
     "${BASEURL}/?${PAGE}&${ROAD}&s_time_id=${UDATE}&s_time_id_f=${DATE}&${DEF}"
+    
