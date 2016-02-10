@@ -56,22 +56,24 @@ mkdir -p "$DATA"
 
 # Visit home page to get cookie
 curl -o "${DATA}/freeways-and-forms.html" \
-    "$BASEURL" -c "$COOKIES" -A "$USERAGENT" \
-    --data "redirect=&username=${USERNAME}&password=${PASSWORD}&login=Login"
+  "$BASEURL" -c "$COOKIES" -A "$USERAGENT" \
+  --data "redirect=&username=${USERNAME}&password=${PASSWORD}&login=Login"
+
+# Find "freeway" choices in HTML select option tags and write to CSV file.
+echo '"fwy","dir","name"' > "${DATA}/freeways.csv"  # Write the header first.
+perl -wnl -e \
+  's/.*\/\?dnode=Freeway\&.*fwy=(.*)\&.*=(.*)">(.*)<.*/$1,$2,$3/g and print' \
+  "${DATA}/freeways-and-forms.html" >> "${DATA}/freeways.csv"
 
 # Visit the main detector_health page for chosen freeway to get the s_time_id
 curl -o "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}.html" -b "$COOKIES" \
-    -A "$USERAGENT" "${BASEURL}/?dnode=${NODE}&content=${CONTENT}&${LN}"
+  -A "$USERAGENT" "${BASEURL}/?dnode=${NODE}&content=${CONTENT}&${LN}"
 
 # Extract the s_time_id from HTML using a regular expression
 UDATE=$(perl -wnl -e 's/name="s_time_id" value="(\d+)"/$1/g and print "$1"' \
-    "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}.html")
-
-# Set query-string defaults
-DEF='eqpo=&tag=&st_cd=on&st_ch=on&st_ff=on&st_hv=on&st_ml=on&st_fr=on&st_or=on'
+  "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}.html")
 
 # Get the TSV file for the detector_health for chosen freeway and date
 curl -o "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}-${YEAR}${MONTH}${DAY}.tsv" \
-    -b "$COOKIES" -A "$USERAGENT" \
-    "${BASEURL}/?${PG}&${LN}&s_time_id=${UDATE}&s_time_id_f=${SDATE}&${DEF}"
-    
+  -b "$COOKIES" -A "$USERAGENT" \
+  "${BASEURL}/?${PG}&${LN}&s_time_id=${UDATE}&s_time_id_f=${SDATE}"
