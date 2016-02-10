@@ -129,6 +129,6 @@ writeLines(result.string,
            paste(data.folder, '/', node.name, '-', content, '-', freeway, '-', 
                  direction, '-', yyyy.str, mm.str, dd.str, '.tsv', sep=""))
 
-#Clean up. This will also print the cookie file
+# Clean up.
 rm(curl)
 gc()
