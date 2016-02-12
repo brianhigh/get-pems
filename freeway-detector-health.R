@@ -55,39 +55,38 @@ freeways.of.interest.file <- "freeways_of_interest.txt"
 # - Dates much match this "regex": '^\\d{4}-\\d{2}-\\d{2}$'
 # - Where this means: four digits, a dash, two digits, a dash, and two digits
 # Examples:
-# start.date <- c('2016-02-05')
-# start.date <- c('2016-02-05', '2016-02-06', '2016-02-07')
-# start.date <- seq(as.Date("2015-01-01"), as.Date("2015-12-31"), "days")
-start.date <- seq(as.Date("2015-01-01"), as.Date("2015-01-03"), "days")
+# search.date <- c('2016-02-05')
+# search.date <- c('2016-02-05', '2016-02-06', '2016-02-07')
+# search.date <- seq(as.Date("2015-01-01"), as.Date("2015-12-31"), "days")
+search.date <- seq(as.Date("2015-01-01"), as.Date("2015-01-03"), "days")
 
-# There is no end date in this query configuration. We are only searching for
-# one date at a time (instead of a range of dates per query).
-
-# --------------------------------------------------------------------------
+# Read in configuration file. This file can contain the settings listed above.
+if (file.exists("conf.R")) source("conf.R")
 
 # --------------------------------------------------------------------------
 # Functions
 # --------------------------------------------------------------------------
 
 ## Function getDetectorHealthPage will fetch a freeway's detector health page
-getDetectorHealthPage <- function(freeway, direction, start.date.str, curl) {
+getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
+                                  base.url, data.folder) {
     # Combine variables into a "lane" string
     lane <- paste('fwy=', freeway, '&dir=', direction, sep='')
     
-    # Parse the start.date.str into a vector
-    start.date.v <- unlist(strsplit(start.date.str, '-'))
-    names(start.date.v) <- c("year", "month", "day")
+    # Parse the search.date.str into a vector
+    search.date.v <- unlist(strsplit(search.date.str, '-'))
+    names(search.date.v) <- c("year", "month", "day")
     
     # Combine variables into a "start date" (sdate) string
-    sdate <- paste(start.date.v[['month']], 
-                   start.date.v[['day']], 
-                   start.date.v[['year']], 
+    sdate <- paste(search.date.v[['month']], 
+                   search.date.v[['day']], 
+                   search.date.v[['year']], 
                    sep='%2F')
     
     # Combine variables into a "file date" (fdate) string
-    fdate <- paste(start.date.v[['year']], 
-                   start.date.v[['month']], 
-                   start.date.v[['day']], 
+    fdate <- paste(search.date.v[['year']], 
+                   search.date.v[['month']], 
+                   search.date.v[['day']], 
                    sep='')
     
     # Page configuration - query specification for type of report page
@@ -120,16 +119,18 @@ getDetectorHealthPage <- function(freeway, direction, start.date.str, curl) {
     detector.health <- read.table(text=result.string, sep='\t', header=T, 
                                   fill=T, quote='', stringsAsFactors=F)
     detector.health$s.time.id <- as.integer(s.time.id)
-    detector.health$start.date <- as.Date(start.date.str)
+    detector.health$search.date <- as.Date(search.date.str)
     return(detector.health)
 }
 
 ## Function getDetectorHealth will fetch the detector health for each freeway
 #  In the dataframe freeways
-getDetectorHealth <- function(freeways, start.date.str, curl) {
+getDetectorHealth <- function(freeways, search.date.str, curl,
+                              base.url, data.folder) {
     detector.health <- adply(.data=freeways, .margins=c(1), 
                              .fun=function(x) getDetectorHealthPage(
-                                 x$freeway, x$direction, start.date.str, curl))
+                                 x$freeway, x$direction, search.date.str, curl,
+                                 base.url, data.folder))
 }
 
 ## Function subsetFreeways will subset freeways by those of interest
@@ -200,7 +201,7 @@ curl <- getCurlHandle(cookiefile = cookies, cookiejar = cookies,
 
 # Load the page into R as a string.
 r = dynCurlReader()
-res <- curlPerform(postfields = formdata, url = base.url, curl=curl,
+res <- curlPerform(postfields = formdata, url = base.url, curl = curl,
                    post = 1L, writefunction = r$update)
 result.string <- r$value() 
 
@@ -212,14 +213,20 @@ write.csv(freeways, paste(data.folder, "freeways.csv", sep="/"), row.names=F)
 freeways <- subsetFreeways(freeways, freeways.of.interest.file)
 
 # Get detector health for each date and freeway and write to a CSV file.
-start.date <- as.character(start.date)
-start.date <- start.date[grep('^\\d{4}-\\d{2}-\\d{2}$', start.date)]
-detector.health <- adply(.data=start.date, .margins=c(1), 
-                         .fun=function(x) getDetectorHealth(freeways, x, curl))
+search.date <- as.character(search.date)
+search.date <- search.date[grep('^\\d{4}-\\d{2}-\\d{2}$', search.date)]
+detector.health <- adply(.data=search.date, .margins=c(1), 
+                         .fun=function(x) getDetectorHealth(freeways, x, curl,
+                                                            base.url, 
+                                                            data.folder))
+# Remove extra variables.
 detector.health$X1 <- NULL
+detector.health$name <- NULL
+
+# Save dataframe as CSV.
 write.csv(detector.health, paste(data.folder, "detector_health.csv", sep="/"), 
           row.names=F)
 
-# Clean up.
+# Clean up. Cookies file will be written to disk. Memory will be freed.
 rm(curl)
 gc()
