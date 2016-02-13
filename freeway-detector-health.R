@@ -105,6 +105,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str,
                              '.tsv', sep='')
     
     # If the data filehas alread been saved, load the file, or get from web
+    cat(freeway, "-", direction, " ")
     if (! file.exists(output.filename)) {
         tryCatch({
             # Get TSV file for the detector_health for chosen freeway and date
@@ -145,7 +146,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str,
 #  In the dataframe freeways
 getDetectorHealth <- function(freeways, search.date.str, curl,
                               base.url, data.folder) {
-    cat("Trying ", search.date.str, "...", "\n")
+    cat("\n", "Trying ", search.date.str, "...", "\n")
     
     # Calculate s_time_id (Unix time integer) from search.date.str
     s.time.id <- as.character(as.integer(as.POSIXct(search.date.str, 
