@@ -129,7 +129,9 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
             # Read table from string into a dataframe
             health <- read.table(text=result.string, sep='\t', header=T, 
                                  fill=T, quote='', stringsAsFactors=F)
-            }, error=function(e){cat("ERROR :",conditionMessage(e), "\n")}
+            }, error=function(e) {
+                cat("ERROR :",conditionMessage(e), "\n")
+            })
     } else {
         # Read from file
         health <- read.table(output.filename, sep='\t', header=T, fill=T, 
