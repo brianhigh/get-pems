@@ -98,21 +98,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     # Combine variables into a "page" (page) string
     page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
                   content, '&export=', export.type, sep='')
-    
-    tryCatch({
-        # Get the detector_health page for chosen freeway to get the s_time_id
-        url <- paste(base.url, '/?dnode=', node.name, '&content=', content, '&', 
-                     lane, sep='')
-        r <- dynCurlReader()
-        result.string <- getURL(url = url, curl = curl)
-        
-        # Extract the s_time_id from HTML
-        s.time.id <- getSTimeId(result.string)
-    }, error=function(e) {
-        cat("ERROR :",conditionMessage(e), "\n")
-        return(data.frame(NULL))
-    })
-    
+
     # Combine variables into a "output filename" (output.filename) string
     output.filename <- paste(data.folder, '/', node.name, '-', 
                              content, '-', freeway, '-', direction, '-', fdate, 
@@ -120,11 +106,21 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     
     # If the data filehas alread been saved, load the file, or get from web
     if (! file.exists(output.filename)) {
-        # Get the TSV file for the detector_health for chosen freeway and date
-        url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id, 
-                     '&s_time_id_f=', sdate, sep='')
-        r = dynCurlReader()
         tryCatch({
+            # Get the detector_health page for chosen freeway to get s_time_id
+            url <- paste(base.url, '/?dnode=', node.name, '&content=', content, 
+                         '&', lane, sep='')
+            r <- dynCurlReader()
+            result.string <- getURL(url = url, curl = curl)
+            
+            # Extract the s_time_id from HTML
+            s.time.id <- getSTimeId(result.string)
+            
+            # Get TSV file for the detector_health for chosen freeway and date
+            url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', 
+                         s.time.id, '&s_time_id_f=', sdate, sep='')
+            r = dynCurlReader()
+            
             # Get TSV data file from website and store as a string in memory
             result.string <- getURL(url = url, curl = curl)
             
@@ -145,7 +141,6 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     }
     
     # Add variables to make this dataset unique from others and return
-    health$s.time.id <- as.integer(s.time.id)
     health$search.date <- as.Date(search.date.str)
     return(health)
 
@@ -155,6 +150,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
 #  In the dataframe freeways
 getDetectorHealth <- function(freeways, search.date.str, curl,
                               base.url, data.folder) {
+    cat("Trying ", search.date.str, "...", "\n")
     detector.health <- adply(.data=freeways, .margins=c(1), 
                              .fun=function(x) getDetectorHealthPage(
                                  x$freeway, x$direction, search.date.str, curl,
