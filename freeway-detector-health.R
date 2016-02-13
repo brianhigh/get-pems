@@ -68,8 +68,8 @@ if (file.exists("conf.R")) source("conf.R")
 # --------------------------------------------------------------------------
 
 ## Function getDetectorHealthPage will fetch a freeway's detector health page
-getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
-                                  base.url, data.folder) {
+getDetectorHealthPage <- function(freeway, direction, search.date.str, 
+                                  s.time.id, curl, base.url, data.folder) {
     # Combine variables into a "lane" string
     lane <- paste('fwy=', freeway, '&dir=', direction, sep='')
     
@@ -107,22 +107,13 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     # If the data filehas alread been saved, load the file, or get from web
     if (! file.exists(output.filename)) {
         tryCatch({
-            # Get the detector_health page for chosen freeway to get s_time_id
-            url <- paste(base.url, '/?dnode=', node.name, '&content=', content, 
-                         '&', lane, sep='')
-            r <- dynCurlReader()
-            result.string <- getURL(url = url, curl = curl)
-            
-            # Extract the s_time_id from HTML
-            s.time.id <- getSTimeId(result.string)
-            
             # Get TSV file for the detector_health for chosen freeway and date
-            url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', 
+            r.url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', 
                          s.time.id, '&s_time_id_f=', sdate, sep='')
-            r = dynCurlReader()
             
             # Get TSV data file from website and store as a string in memory
-            result.string <- getURL(url = url, curl = curl)
+            r = dynCurlReader()
+            result.string <- getURL(url = r.url, curl = curl)
             
             # Write string to file
             writeLines(result.string, output.filename)
@@ -141,7 +132,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     }
     
     # Add variables to make this dataset unique from others and return
-    health$search.date <- as.Date(search.date.str)
+    if (nrow(health) > 0) health$search.date <- as.Date(search.date.str)
     return(health)
 
 }
@@ -151,10 +142,16 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
 getDetectorHealth <- function(freeways, search.date.str, curl,
                               base.url, data.folder) {
     cat("Trying ", search.date.str, "...", "\n")
+    
+    # Calculate s_time_id (Unix time integer) from search.date.str
+    s.time.id <- as.character(as.integer(as.POSIXct(search.date.str, 
+                                                    origin="1970-01-01",
+                                                    tz = "GMT")))
+    
     detector.health <- adply(.data=freeways, .margins=c(1), 
                              .fun=function(x) getDetectorHealthPage(
-                                 x$freeway, x$direction, search.date.str, curl,
-                                 base.url, data.folder))
+                                 x$freeway, x$direction, search.date.str, 
+                                 s.time.id, curl, base.url, data.folder))
 }
 
 ## Function subsetFreeways will subset freeways by those of interest
