@@ -65,8 +65,8 @@ perl -wnl -e \
   's/.*\/\?dnode=Freeway\&.*fwy=(.*)\&.*=(.*)">(.*)<.*/$1,$2,$3/g and print' \
   "${DATA}/freeways-and-forms.html" >> "${DATA}/freeways.csv"
 
-# Calculate the s_time_id (unix epoch timestamp) as integer
-UDATE=$(date -u -d "${YEAR}-{MONTH}-${DAY}" "+%s")
+# Calculate the s_time_id (start time ID) as integer (unix epoch timestamp)
+UDATE=$(date -u -d "${YEAR}-${MONTH}-${DAY}" "+%s")
 
 # Get the TSV file for the detector_health for chosen freeway and date
 curl -o "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}-${YEAR}${MONTH}${DAY}.tsv" \
