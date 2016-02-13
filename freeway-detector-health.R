@@ -99,9 +99,6 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
                   content, '&export=', export.type, sep='')
     
-    # Initialize heath data.frame as empty
-    health <- data.frame(NULL)
-    
     tryCatch({
         # Get the detector_health page for chosen freeway to get the s_time_id
         url <- paste(base.url, '/?dnode=', node.name, '&content=', content, '&', 
@@ -113,7 +110,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
         s.time.id <- getSTimeId(result.string)
     }, error=function(e) {
         cat("ERROR :",conditionMessage(e), "\n")
-        return(health)
+        return(data.frame(NULL))
     })
     
     # Combine variables into a "output filename" (output.filename) string
@@ -139,7 +136,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
                                  fill=T, quote='', stringsAsFactors=F)
             }, error=function(e) {
                 cat("ERROR :",conditionMessage(e), "\n")
-                return(health)
+                return(data.frame(NULL))
             })
     } else {
         # Read from file
@@ -147,14 +144,11 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
                              quote='', stringsAsFactors=F)
     }
     
-    # Return the detector health dataframe or an empty dataframe (on error)
-    if (nrow(health) > 0) {
-        health$s.time.id <- as.integer(s.time.id)
-        health$search.date <- as.Date(search.date.str)
-        return(health)
-    } else {
-        return(health)
-    }
+    # Add variables to make this dataset unique from others and return
+    health$s.time.id <- as.integer(s.time.id)
+    health$search.date <- as.Date(search.date.str)
+    return(health)
+
 }
 
 ## Function getDetectorHealth will fetch the detector health for each freeway
