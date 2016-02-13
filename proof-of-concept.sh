@@ -65,13 +65,8 @@ perl -wnl -e \
   's/.*\/\?dnode=Freeway\&.*fwy=(.*)\&.*=(.*)">(.*)<.*/$1,$2,$3/g and print' \
   "${DATA}/freeways-and-forms.html" >> "${DATA}/freeways.csv"
 
-# Visit the main detector_health page for chosen freeway to get the s_time_id
-curl -o "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}.html" -b "$COOKIES" \
-  -A "$USERAGENT" "${BASEURL}/?dnode=${NODE}&content=${CONTENT}&${LN}"
-
-# Extract the s_time_id from HTML using a regular expression
-UDATE=$(perl -wnl -e 's/name="s_time_id" value="(\d+)"/$1/g and print "$1"' \
-  "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}.html")
+# Calculate the s_time_id (unix epoch timestamp) as integer
+UDATE=$(date -u -d "${YEAR}-{MONTH}-${DAY}" "+%s")
 
 # Get the TSV file for the detector_health for chosen freeway and date
 curl -o "${DATA}/${NODE}-${CONTENT}-${FWY}-${DIR}-${YEAR}${MONTH}${DAY}.tsv" \

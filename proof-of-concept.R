@@ -111,14 +111,10 @@ result.string <- r$value()
 freeways <- getFreeways(result.string)
 write.csv(freeways, paste(data.folder, "freeways.csv", sep="/"), row.names=F)
 
-# Visit the main detector_health page for chosen freeway to get the s_time_id
-url <- paste(base.url, '/?dnode=', node.name, '&content=', content, '&', lane, 
-             sep='')
-r = dynCurlReader()
-result.string <- getURL(url = url, curl = curl)
-
-# Extract the s_time_id from HTML
-s.time.id <- getSTimeId(result.string)
+# Calculate s_time_id (Unix time integer) from search.date.str
+s.time.id <- as.character(as.integer(
+    as.POSIXct(paste(yyyy.str, mm.str, dd.str, sep='-'), 
+               origin="1970-01-01", tz = "GMT")))
 
 # Get the TSV file for the detector_health for chosen freeway and date
 url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id, 
