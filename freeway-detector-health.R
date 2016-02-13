@@ -131,10 +131,14 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str,
                              quote='', stringsAsFactors=F)
     }
     
-    # Add variables to make this dataset unique from others and return
-    if (nrow(health) > 0) health$search.date <- as.Date(search.date.str)
-    return(health)
-
+    tryCatch({
+        # Add variables to make this dataset unique from others and return
+        if (nrow(health) > 0) health$search.date <- as.Date(search.date.str)
+        return(health)
+    }, error=function(e) {
+        cat("ERROR :",conditionMessage(e), "\n")
+        return(data.frame(NULL))
+    })
 }
 
 ## Function getDetectorHealth will fetch the detector health for each freeway
