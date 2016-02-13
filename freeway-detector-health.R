@@ -99,13 +99,10 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
                   content, '&export=', export.type, sep='')
     
-    # Combine variables into a "output filename" (output.filename) string
-    output.filename <- paste(data.folder, '/', node.name, '-', 
-                             content, '-', freeway, '-', direction, '-', fdate, 
-                             '.tsv', sep='')
+    # Initialize heath data.frame as empty
+    health <- data.frame(NULL)
     
-    # If the data filehas alread been saved, load the file, or get from web
-    if (! file.exists(output.filename)) {
+    tryCatch({
         # Get the detector_health page for chosen freeway to get the s_time_id
         url <- paste(base.url, '/?dnode=', node.name, '&content=', content, '&', 
                      lane, sep='')
@@ -114,7 +111,18 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
         
         # Extract the s_time_id from HTML
         s.time.id <- getSTimeId(result.string)
-        
+    }, error=function(e) {
+        cat("ERROR :",conditionMessage(e), "\n")
+        return(health)
+    })
+    
+    # Combine variables into a "output filename" (output.filename) string
+    output.filename <- paste(data.folder, '/', node.name, '-', 
+                             content, '-', freeway, '-', direction, '-', fdate, 
+                             '.tsv', sep='')
+    
+    # If the data filehas alread been saved, load the file, or get from web
+    if (! file.exists(output.filename)) {
         # Get the TSV file for the detector_health for chosen freeway and date
         url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id, 
                      '&s_time_id_f=', sdate, sep='')
@@ -131,6 +139,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
                                  fill=T, quote='', stringsAsFactors=F)
             }, error=function(e) {
                 cat("ERROR :",conditionMessage(e), "\n")
+                return(health)
             })
     } else {
         # Read from file
@@ -139,12 +148,12 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str, curl,
     }
     
     # Return the detector health dataframe or an empty dataframe (on error)
-    if (exists(health) && is.data.frame(get(health))) {
+    if (nrow(health) > 0) {
         health$s.time.id <- as.integer(s.time.id)
         health$search.date <- as.Date(search.date.str)
         return(health)
     } else {
-        return(data.frame(NULL))
+        return(health)
     }
 }
 
