@@ -143,7 +143,7 @@ getDetectorHealthPage <- function(freeway, direction, search.date.str,
 }
 
 ## Function getDetectorHealth will fetch the detector health for each freeway
-#  In the dataframe freeways
+#  in the dataframe "freeways" for a specific date "search.date.str"
 getDetectorHealth <- function(freeways, search.date.str, curl,
                               base.url, data.folder) {
     cat("\n", "Trying ", search.date.str, "...", "\n")
@@ -178,19 +178,6 @@ subsetFreeways <- function(freeways, freeways.of.interest.file) {
         freeways <- merge(freeways, freeways.of.interest, by = "name")
     }
     return(freeways)
-}
-
-## Function getSTimeId() finds the "s_time_id" value in an HTML document.
-# Note: You could also extract available cities and counties with this method.
-getSTimeId <- function(doc) {
-    optValues <- xpathSApply(
-        htmlParse(doc), 
-        paste('//form[@name="rpt_vars"]/table[@id="bts_report_controls"]', 
-              '/tr/td/input[@id="s_time_id"]', sep=''), 
-        function(x) xmlAttrs(x)["value"]
-    )
-    
-    return(optValues[[1]])
 }
 
 ## Function getFreeways() finds "freeway" choices in HTML select option tags.
