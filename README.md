@@ -49,7 +49,7 @@ downloaded files will be read into R instead of downloading them again.
 There is also some error-handling code to allow the script to continue on
 some download errors, but this feature has not yet been extensively tested.
 
-Footnotes:
+## Notes
 
 1. This sort of approach was described in the 
 [Web Scraping and Web Services Workshop](http://datascience.ucdavis.edu/NSFWorkshops/WebScraping/ScheduleOutline.html) 
