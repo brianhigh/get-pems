@@ -63,7 +63,7 @@ getFreeways <- function(doc) {
 }
 
 # --------------------------------------------------------------------------
-# Main routine
+# Detector health: Data Quality > Detector Health > Lanes
 # --------------------------------------------------------------------------
 
 # Create the data folder if needed.
@@ -111,6 +111,66 @@ result.string <- getURL(url = r.url, curl = curl)
 writeLines(result.string, 
            paste(data.folder, '/', node.name, '-', content, '-', freeway, '-', 
                  direction, '-', yyyy.str, mm.str, dd.str, '.tsv', sep=""))
+freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE, 
+                                              sep='\t', fill=TRUE))
+
+# --------------------------------------------------------------------------
+# Detector performance: Performance > Aggregates > Time Series
+# --------------------------------------------------------------------------
+
+# Page configuration - query specification for type of report page
+# (Continued from above...)
+node.name <- 'VDS'
+content <- 'loops'
+form.tab <- 'det_timeseries'
+
+quantities <- c("flow", "occ", "speed", "truck_flow", "truck_prop", "vmt",
+                "vht", "q", "truck_vmt","truck_vht")
+
+# Calculate e_time_id (Unix time integer) from search.date.str
+e.time.id <- as.character(as.integer(
+    as.POSIXct(paste(yyyy.str, mm.str, dd.str, sep='-'), 
+               origin="1970-01-01", tz = "GMT") + 86340))
+
+# Combine variables into a "page" (page) string
+page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
+              content, '&tab=', form.tab, '&export=', export.type, sep='')
+
+# Combine variables into a "start date" (sdate) and time string
+sdate <- paste(mm.str, dd.str, yyyy.str, sep='%2F')
+sdatetime <- paste(sdate, '+00%3A00', sep='')
+
+# Combine variables into a "end date" (edate) and time string
+edate <- paste(mm.str, dd.str, yyyy.str, sep='%2F')
+edatetime <- paste(sdate, '+23%3A59', sep='')
+
+# Construct string of default data values which do not change with each query.
+static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
+                     '&dow_3=on&dow_4=on&dow_5=on&dow_6=on&holidays=on&q2=',
+                     '&gn=hour&agg=on&lane1=on&lane2=on&lane3=on&lane4=on',
+                     sep='')
+
+get.perf <- function(vds, quantity){
+    # Create the data folder if needed.
+    my.dir <- paste(data.folder, node.name, content, vds, sep='/')
+    dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
+
+    # Get the TSV file for the  for chosen VDS, quanitity, and date
+    r.url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id, 
+                   '&s_time_id_f=', sdatetime, '&e_time_id=', e.time.id, 
+                   '&e_time_id_f=', edatetime, '&station_id=', vds, '&q=', 
+                   quantity, static.data, sep='')
+    r = dynCurlReader()
+    result.string <- getURL(url = r.url, curl = curl)
+    writeLines(result.string, 
+               paste(my.dir, '/', node.name, '-', content, '-', vds, '-', 
+                     quantity, '-', yyyy.str, mm.str, dd.str, '.tsv', sep=""))
+}
+
+# Get performance data for all VDSs and quanities for a given freeway and date.
+res <- sapply(unique(freeway.health$VDS), 
+              function(x) sapply(quantities, 
+                                 function(y) get.perf(x, y)))
 
 # Clean up.
 rm(curl)
