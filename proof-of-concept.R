@@ -155,7 +155,8 @@ static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
 
 get.perf <- function(vds, quantity){
     # Create the data folder if needed.
-    my.dir <- paste(data.folder, node.name, content, form.tab, vds, sep='/')
+    my.dir <- paste(data.folder, node.name, content, form.tab, vds, quantity,
+                    sep='/')
     dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
 
     # Get the TSV file for the  for chosen VDS, quanitity, and date
