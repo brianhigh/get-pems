@@ -41,6 +41,9 @@ mm.str <- '02'
 dd.str <- '05'
 yyyy.str <- '2016'
 
+# Read in configuration file. This file can contain the settings listed above.
+if (file.exists("conf.R")) source("conf.R")
+
 # --------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -152,7 +155,7 @@ static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
 
 get.perf <- function(vds, quantity){
     # Create the data folder if needed.
-    my.dir <- paste(data.folder, node.name, content, vds, sep='/')
+    my.dir <- paste(data.folder, node.name, content, form.tab, vds, sep='/')
     dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
 
     # Get the TSV file for the  for chosen VDS, quanitity, and date
@@ -163,8 +166,9 @@ get.perf <- function(vds, quantity){
     r = dynCurlReader()
     result.string <- getURL(url = r.url, curl = curl)
     writeLines(result.string, 
-               paste(my.dir, '/', node.name, '-', content, '-', vds, '-', 
-                     quantity, '-', yyyy.str, mm.str, dd.str, '.tsv', sep=""))
+               paste(my.dir, '/', node.name, '-', content, '-', form.tab, '-', 
+                     vds, '-', quantity, '-', yyyy.str, mm.str, dd.str, '.tsv', 
+                     sep=""))
 }
 
 # Get performance data for all VDSs and quanities for a given freeway and date.
