@@ -26,8 +26,8 @@ be using.
 ## Method
 
 A "proof of concept" [Bash](https://www.gnu.org/software/bash/) script is used 
-to test the use of [cURL](https://curl.haxx.se/) for programatically 
-retrieving the data from the website.
+to test the use of [cURL](https://curl.haxx.se/) for programatically^1^ 
+retrieving the data from the website. 
 
 Such an approach is needed because the website interface would otherwise
 require an inordinate amount of tedious clicking to retrieve data for
@@ -48,3 +48,11 @@ downloaded files will be read into R instead of downloading them again.
 
 There is also some error-handling code to allow the script to continue on
 some download errors, but this feature has not yet been extensively tested.
+
+Footnotes:
+
+1. This sort of approach was described in the 
+[Web Scraping and Web Services Workshop](http://datascience.ucdavis.edu/NSFWorkshops/WebScraping/ScheduleOutline.html) 
+web page (retrieved 2016-03-09). Our scripts were developed independently of 
+this resource, however, as we only discovered that document after our scripts 
+had already been developed.
