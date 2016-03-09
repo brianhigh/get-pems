@@ -37,14 +37,14 @@ to capture the query values along the way.
 
 An [R](https://www.r-project.org/) script was written to automate the collection
 of detector health records for a set of dates for a set of freeways. The cURL 
-commands from the Bash script were recoding in R using RCurl. The script 
-dpwnloads the data from each web query as a TSV file and saves the file. The
-data is also compiled into a dataframe and saved as a CSV file. A date column 
+commands from the Bash script were recoded in R using RCurl. The script 
+downloads the data from each web query as a TSV file and saves the file. The
+data are also compiled into a dataframe and saved as a CSV file. A date column 
 is added since the original TSV files do not contain this information.
 
 Regular expressions are used for input data validation. If there is an error
 with downloading files, the script can be run again and the previously
 downloaded files will be read into R instead of downloading them again.
 
-There is also some error catching code to allow the script to continue on
+There is also some error-handling code to allow the script to continue on
 some download errors, but this feature has not yet been extensively tested.
