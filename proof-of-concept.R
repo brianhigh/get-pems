@@ -11,6 +11,7 @@ rm(list=ls())
 library(RCurl)
 library(XML)
 library(plyr)
+library(zoo)
 
 # --------------------------------------------------------------------------
 # Configuration
@@ -33,13 +34,13 @@ content <- 'detector_health'
 export.type <- 'text'
 
 # Lanes configuration - specific freeway and direction to query
-freeway <- '1'
-direction <- 'N'
+freeway <- '80'
+direction <- 'E'
 
 # Start date configuration - date for (beginning of) query (date or range)
-mm.str <- '02'
-dd.str <- '05'
-yyyy.str <- '2016'
+mm.str <- '01'
+dd.str <- '01'
+yyyy.str <- '2015'
 
 # Read in configuration file. This file can contain the settings listed above.
 if (file.exists("conf.R")) source("conf.R")
@@ -89,7 +90,7 @@ res <- curlPerform(postfields = formdata, url = base.url, curl=curl,
                    post = 1L, writefunction = r$update)
 result.string <- r$value() 
 freeways <- getFreeways(result.string)
-write.csv(freeways, paste(data.folder, "freeways.csv", sep="/"), row.names=F)
+write.csv(freeways, file.path(data.folder, "freeways.csv"), row.names=F)
 
 # Calculate s_time_id (Unix time integer) from search.date.str
 s.time.id <- as.character(as.integer(
@@ -112,8 +113,8 @@ r.url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id,
 r = dynCurlReader()
 result.string <- getURL(url = r.url, curl = curl)
 writeLines(result.string, 
-           paste(data.folder, '/', node.name, '-', content, '-', freeway, '-', 
-                 direction, '-', yyyy.str, mm.str, dd.str, '.tsv', sep=""))
+           file.path(data.folder, paste(node.name, '-', content, '-', freeway, '-', 
+                 direction, '-', yyyy.str, mm.str, dd.str, '.tsv', sep="")))
 freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE, 
                                               sep='\t', fill=TRUE))
 
@@ -121,31 +122,48 @@ freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE,
 # Detector performance: Performance > Aggregates > Time Series
 # --------------------------------------------------------------------------
 
+# Get detector performance for a whole month, given a freeway.
+
 # Page configuration - query specification for type of report page
 # (Continued from above...)
 node.name <- 'VDS'
 content <- 'loops'
 form.tab <- 'det_timeseries'
 
+# Lanes configuration - specific freeway and direction to query
+freeway <- '80'
+direction <- 'E'
+
+# Start date configuration - date for (beginning of) query (date or range)
+mm.str <- '01'
+yyyy.str <- '2015'
+
 quantities <- c("flow", "occ", "speed", "truck_flow", "truck_prop", "vmt",
                 "vht", "q", "truck_vmt","truck_vht")
-
-# Calculate e_time_id (Unix time integer) from search.date.str
-e.time.id <- as.character(as.integer(
-    as.POSIXct(paste(yyyy.str, mm.str, dd.str, sep='-'), 
-               origin="1970-01-01", tz = "GMT") + 86340))
 
 # Combine variables into a "page" (page) string
 page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
               content, '&tab=', form.tab, '&export=', export.type, sep='')
 
 # Combine variables into a "start date" (sdate) and time string
-sdate <- paste(mm.str, dd.str, yyyy.str, sep='%2F')
-sdatetime <- paste(sdate, '+00%3A00', sep='')
+sdate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"))
+sdate.str <- as.character(sdate)
+sdatetime <- paste(sdate.str, '+00:00', sep='')
+
+# Calculate s_time_id (Unix time integer) from sdate.str
+s.time.id <- as.character(as.integer(as.POSIXct(sdate.str, 
+                                                origin="1970-01-01", 
+                                                tz = "GMT")))
 
 # Combine variables into a "end date" (edate) and time string
-edate <- paste(mm.str, dd.str, yyyy.str, sep='%2F')
-edatetime <- paste(sdate, '+23%3A59', sep='')
+edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac = 1)
+edate.str <- as.character(edate)
+edatetime <- paste(edate.str, '+23:59', sep='')
+
+# Calculate e_time_id (Unix time integer) from edate.str
+e.time.id <- as.character(as.integer(as.POSIXct(edate.str, 
+                                                origin="1970-01-01", 
+                                                tz = "GMT") + 86340))
 
 # Construct string of default data values which do not change with each query.
 static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
@@ -155,8 +173,7 @@ static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
 
 get.perf <- function(vds, quantity){
     # Create the data folder if needed.
-    my.dir <- paste(data.folder, node.name, content, form.tab, vds, quantity,
-                    sep='/')
+    my.dir <- file.path(data.folder, node.name, content, form.tab, vds, quantity)
     dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
 
     # Get the TSV file for the  for chosen VDS, quanitity, and date
@@ -168,14 +185,36 @@ get.perf <- function(vds, quantity){
     result.string <- getURL(url = r.url, curl = curl)
     writeLines(result.string, 
                paste(my.dir, '/', node.name, '-', content, '-', form.tab, '-', 
-                     vds, '-', quantity, '-', yyyy.str, mm.str, dd.str, '.tsv', 
+                     vds, '-', quantity, '-', yyyy.str, mm.str, '.tsv', 
                      sep=""))
+    perf <- suppressWarnings(read.table(
+        text=result.string, header=TRUE, sep='\t', fill=TRUE))
+
+    # Add columns
+    perf$VDS <- vds
+    perf$quantity <- quantity
+    perf$datetime <- row.names(perf)
+    
+    # Clean up column names
+    names(perf) <- gsub("\\.+", '.', names(perf))
+    names(perf) <- gsub("\\.$", '', names(perf))
+    names(perf) <- gsub("(Lane\\.\\d).*$", '\\1', names(perf))
+    
+    # Reset row names
+    row.names(perf) <- NULL
+    
+    return(perf)
 }
 
-# Get performance data for all VDSs and quanities for a given freeway and date.
-res <- sapply(unique(freeway.health$VDS), 
-              function(x) sapply(quantities, 
-                                 function(y) get.perf(x, y)))
+# Get performance data for all VDSs and quantities for a given freeway and month.
+vds.list <- unique(freeway.health$VDS)
+df <- unique(data.frame(VDS=rep(vds.list, each=length(quantities)), 
+                 quantities=rep(quantities, each=length(vds.list))))
+
+result <- adply(df, 1, function(x) get.perf(x$VDS, x$quantities))
+result <- result[,c("VDS", "quantity", "datetime", "Hour", 
+                    names(result[,grep("Lane\\.", names(result))]))]
+write.csv(result, file.path(data.folder, 'performance.csv'), row.names=F)
 
 # Clean up.
 rm(curl)

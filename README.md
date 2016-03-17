@@ -26,7 +26,7 @@ be using.
 ## Method
 
 A "proof of concept" [Bash](https://www.gnu.org/software/bash/) script is used 
-to test the use of [cURL](https://curl.haxx.se/) for programatically^1^ 
+to test the use of [cURL](https://curl.haxx.se/) for programatically[1]. 
 retrieving the data from the website. 
 
 Such an approach is needed because the website interface would otherwise
