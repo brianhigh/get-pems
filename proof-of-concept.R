@@ -125,64 +125,22 @@ freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE,
 
 # Get detector performance for a whole month, given a freeway.
 
-# Page configuration - query specification for type of report page
-# (Continued from above...)
-node.name <- 'VDS'
-content <- 'loops'
-form.tab <- 'det_timeseries'
-
-# Lanes configuration - specific freeway and direction to query
-freeway <- '80'
-direction <- 'E'
-
-# Start date configuration - date for (beginning of) query (date or range)
-mm.str <- '01'
-yyyy.str <- '2015'
-
-quantities <- c("flow", "occ", "speed", "truck_flow", "truck_prop", "vmt",
-                "vht", "q", "truck_vmt","truck_vht")
-
-# Combine variables into a "page" (page) string
-page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
-              content, '&tab=', form.tab, '&export=', export.type, sep='')
-
-# Combine variables into a "start date" (sdate) and time string
-sdate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"))
-sdate.str <- as.character(sdate)
-sdatetime <- paste(sdate.str, '+00:00', sep='')
-
-# Calculate s_time_id (Unix time integer) from sdate.str
-s.time.id <- as.character(as.integer(as.POSIXct(sdate.str, 
-                                                origin="1970-01-01", 
-                                                tz = "GMT")))
-
-# Combine variables into a "end date" (edate) and time string
-edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac=1)
-edate.str <- as.character(edate)
-edatetime <- paste(edate.str, '+23:59', sep='')
-
-# Calculate e_time_id (Unix time integer) from edate.str
-e.time.id <- as.character(as.integer(as.POSIXct(edate.str, 
-                                                origin="1970-01-01", 
-                                                tz = "GMT") + 86340))
-
-# Construct string of default data values which do not change with each query.
-static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
-                     '&dow_3=on&dow_4=on&dow_5=on&dow_6=on&holidays=on&q2=',
-                     '&gn=hour&agg=on&lane1=on&lane2=on&lane3=on&lane4=on',
-                     '&lane5=on&lane6=on&lane7=on&lane8=on', sep='')
-
-get.perf <- function(vds, quantity){
+# Function: get.perf()
+#     Get detector performance, given start and end times, a VDS and a 
+#     performance variable.
+get.perf <- function(vds, quantity, times){
     # Create the data folder if needed.
     my.dir <- file.path(data.folder, 
                         node.name, content, form.tab, vds, quantity)
     dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
 
     # Get the TSV file for the  for chosen VDS, quanitity, and date
-    r.url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id, 
-                   '&s_time_id_f=', sdatetime, '&e_time_id=', e.time.id, 
-                   '&e_time_id_f=', edatetime, '&station_id=', vds, '&q=', 
-                   quantity, static.data, sep='')
+    r.url <- paste(base.url, '/?', page, '&', lane, 
+                   '&s_time_id=', times$s.time.id, 
+                   '&s_time_id_f=', times$sdatetime, 
+                   '&e_time_id=', times$e.time.id, 
+                   '&e_time_id_f=', times$edatetime, 
+                   '&station_id=', vds, '&q=', quantity, static.data, sep='')
     r = dynCurlReader()
     result.string <- getURL(url = r.url, curl = curl)
     writeLines(result.string, 
@@ -208,12 +166,73 @@ get.perf <- function(vds, quantity){
     return(perf)
 }
 
+# Function: get.times()
+#     Return a list of start and end time variables, given month and year.
+get.times <- function(mm.str, yyyy.str) {
+    # Combine variables into a "start date" (sdate) and time string
+    sdate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"))
+    sdate.str <- as.character(sdate)
+    sdatetime <- paste(sdate.str, '+00:00', sep='')
+    
+    # Calculate s_time_id (Unix time integer) from sdate.str
+    s.time.id <- as.character(as.integer(as.POSIXct(sdate.str, 
+                                                    origin="1970-01-01", 
+                                                    tz = "GMT")))
+    
+    # Combine variables into a "end date" (edate) and time string
+    edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac=1)
+    edate.str <- as.character(edate)
+    edatetime <- paste(edate.str, '+23:59', sep='')
+    
+    # Calculate e_time_id (Unix time integer) from edate.str
+    e.time.id <- as.character(as.integer(as.POSIXct(edate.str, 
+                                                    origin="1970-01-01", 
+                                                    tz = "GMT") + 86340))
+    return(list(sdatetime=sdatetime, s.time.id=s.time.id, 
+                edatetime=edatetime, e.time.id=e.time.id))
+}
+
+# Page configuration - query specification for type of report page
+# (Continued from above...)
+node.name <- 'VDS'
+content <- 'loops'
+form.tab <- 'det_timeseries'
+
+# Combine query variables into a "page" (page) string
+page <- paste('report_form=', form.num, '&dnode=', node.name, '&content=', 
+              content, '&tab=', form.tab, '&export=', export.type, sep='')
+
+# Construct string of default data values which do not change with each query.
+static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
+                     '&dow_3=on&dow_4=on&dow_5=on&dow_6=on&holidays=on&q2=',
+                     '&gn=hour&agg=on&lane1=on&lane2=on&lane3=on&lane4=on',
+                     '&lane5=on&lane6=on&lane7=on&lane8=on', sep='')
+
+# Define the performance variables ("quantities") to query from the website.
+quantities <- c("flow", "occ", "speed", "truck_flow", "truck_prop", "vmt",
+                "vht", "q", "truck_vmt","truck_vht")
+
+# Lanes configuration - specific freeway and direction to query
+freeway <- '80'
+direction <- 'E'
+
+# Start date configuration - date for (beginning of) query (date or range)
+mm.str <- '01'
+yyyy.str <- '2015'
+
+# Find start and end times for the query.
+times <- get.times(mm.str, yyyy.str)
+
 # Get performance data for all VDSs and quantities for a freeway and month.
 vds.list <- unique(freeway.health$VDS)
-df <- unique(data.frame(VDS=rep(vds.list, each=length(quantities)), 
-                 quantity=rep(quantities, each=length(vds.list))))
-result <- adply(df, 1, function(x) get.perf(x$VDS, x$quantity))
-write.csv(result, file.path(data.folder, 'performance.csv'), row.names=FALSE)
+result <- adply(expand.grid(vds.list, quantities), 1, 
+                function(x) get.perf(x$VDS, x$quantity, times))
+
+# Save results to a file.
+write.csv(result, 
+          file.path(data.folder, 
+                    paste0('performance', '-', freeway, '-', direction, '-',
+                           yyyy.str, mm.str, '.csv')), row.names=FALSE)
 
 # Clean up.
 rm(curl)
