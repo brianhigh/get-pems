@@ -203,9 +203,6 @@ get.perf <- function(vds, quantity){
     # Add a column for VDS so we don't lose it when combining results later.
     perf$VDS <- vds
     
-    # Reset row names
-    row.names(perf) <- NULL
-    
     return(perf)
 }
 
