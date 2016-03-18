@@ -113,8 +113,9 @@ r.url <- paste(base.url, '/?', page, '&', lane, '&s_time_id=', s.time.id,
 r = dynCurlReader()
 result.string <- getURL(url = r.url, curl = curl)
 writeLines(result.string, 
-           file.path(data.folder, paste(node.name, '-', content, '-', freeway, '-', 
-                 direction, '-', yyyy.str, mm.str, dd.str, '.tsv', sep="")))
+           file.path(data.folder, 
+                     paste0(node.name, '-', content, '-', freeway, '-', 
+                            direction, '-', yyyy.str, mm.str, dd.str, '.tsv')))
 freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE, 
                                               sep='\t', fill=TRUE))
 
@@ -156,7 +157,7 @@ s.time.id <- as.character(as.integer(as.POSIXct(sdate.str,
                                                 tz = "GMT")))
 
 # Combine variables into a "end date" (edate) and time string
-edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac = 1)
+edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac=1)
 edate.str <- as.character(edate)
 edatetime <- paste(edate.str, '+23:59', sep='')
 
@@ -173,7 +174,8 @@ static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
 
 get.perf <- function(vds, quantity){
     # Create the data folder if needed.
-    my.dir <- file.path(data.folder, node.name, content, form.tab, vds, quantity)
+    my.dir <- file.path(data.folder, 
+                        node.name, content, form.tab, vds, quantity)
     dir.create(file.path(my.dir), showWarnings = FALSE, recursive = TRUE)
 
     # Get the TSV file for the  for chosen VDS, quanitity, and date
@@ -188,7 +190,7 @@ get.perf <- function(vds, quantity){
                      vds, '-', quantity, '-', yyyy.str, mm.str, '.tsv', 
                      sep=""))
     perf <- suppressWarnings(read.table(
-        text=result.string, header=TRUE, sep='\t', fill=TRUE, row.names = NULL))
+        text=result.string, header=TRUE, sep='\t', fill=TRUE, row.names=NULL))
     
     # The columns are off by 1, so shift left by 1. Rename last three columns. 
     n <- length(names(perf))
@@ -211,7 +213,7 @@ vds.list <- unique(freeway.health$VDS)
 df <- unique(data.frame(VDS=rep(vds.list, each=length(quantities)), 
                  quantity=rep(quantities, each=length(vds.list))))
 result <- adply(df, 1, function(x) get.perf(x$VDS, x$quantity))
-write.csv(result, file.path(data.folder, 'performance.csv'), row.names=F)
+write.csv(result, file.path(data.folder, 'performance.csv'), row.names=FALSE)
 
 # Clean up.
 rm(curl)
