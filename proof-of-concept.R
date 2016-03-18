@@ -169,7 +169,7 @@ e.time.id <- as.character(as.integer(as.POSIXct(edate.str,
 static.data <- paste('&tod=all&tod_from=0&tod_to=0&dow_0=on&dow_1=on&dow_2=on',
                      '&dow_3=on&dow_4=on&dow_5=on&dow_6=on&holidays=on&q2=',
                      '&gn=hour&agg=on&lane1=on&lane2=on&lane3=on&lane4=on',
-                     sep='')
+                     '&lane5=on&lane6=on&lane7=on&lane8=on', sep='')
 
 get.perf <- function(vds, quantity){
     # Create the data folder if needed.
@@ -188,17 +188,20 @@ get.perf <- function(vds, quantity){
                      vds, '-', quantity, '-', yyyy.str, mm.str, '.tsv', 
                      sep=""))
     perf <- suppressWarnings(read.table(
-        text=result.string, header=TRUE, sep='\t', fill=TRUE))
-
-    # Add columns
-    perf$VDS <- vds
-    perf$quantity <- quantity
-    perf$datetime <- row.names(perf)
+        text=result.string, header=TRUE, sep='\t', fill=TRUE, row.names = NULL))
     
+    # The columns are off by 1, so shift left by 1. Rename last three columns. 
+    n <- length(names(perf))
+    names(perf) <- c(names(perf)[c(-1, -(n - 1), -n)], 
+                     'agg', 'lane.points', 'observed')
+
     # Clean up column names
     names(perf) <- gsub("\\.+", '.', names(perf))
     names(perf) <- gsub("\\.$", '', names(perf))
     names(perf) <- gsub("(Lane\\.\\d).*$", '\\1', names(perf))
+    
+    # Add a column for VDS so we don't lose it when combining results later.
+    perf$VDS <- vds
     
     # Reset row names
     row.names(perf) <- NULL
@@ -206,14 +209,11 @@ get.perf <- function(vds, quantity){
     return(perf)
 }
 
-# Get performance data for all VDSs and quantities for a given freeway and month.
+# Get performance data for all VDSs and quantities for a freeway and month.
 vds.list <- unique(freeway.health$VDS)
 df <- unique(data.frame(VDS=rep(vds.list, each=length(quantities)), 
-                 quantities=rep(quantities, each=length(vds.list))))
-
-result <- adply(df, 1, function(x) get.perf(x$VDS, x$quantities))
-result <- result[,c("VDS", "quantity", "datetime", "Hour", 
-                    names(result[,grep("Lane\\.", names(result))]))]
+                 quantity=rep(quantities, each=length(vds.list))))
+result <- adply(df, 1, function(x) get.perf(x$VDS, x$quantity))
 write.csv(result, file.path(data.folder, 'performance.csv'), row.names=F)
 
 # Clean up.
