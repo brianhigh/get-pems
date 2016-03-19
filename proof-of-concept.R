@@ -125,10 +125,39 @@ freeway.health <- suppressWarnings(read.table(text=result.string, header=TRUE,
 
 # Get detector performance for a whole month, given a freeway.
 
+# Function: get.times()
+#     Return a list of start and end time variables, given month and year.
+get.times <- function(mm.str, yyyy.str) {
+    # Combine variables into a "start date" (sdate) and time string
+    sdate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"))
+    sdate.str <- as.character(sdate)
+    sdatetime <- paste(sdate.str, '+00:00', sep='')
+    
+    # Calculate s_time_id (Unix time integer) from sdate.str
+    s.time.id <- as.character(as.integer(as.POSIXct(sdate.str, 
+                                                    origin="1970-01-01", 
+                                                    tz = "GMT")))
+    
+    # Combine variables into a "end date" (edate) and time string
+    edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac=1)
+    edate.str <- as.character(edate)
+    edatetime <- paste(edate.str, '+23:59', sep='')
+    
+    # Calculate e_time_id (Unix time integer) from edate.str
+    e.time.id <- as.character(as.integer(as.POSIXct(edate.str, 
+                                                    origin="1970-01-01", 
+                                                    tz = "GMT") + 86340))
+    return(list(sdatetime=sdatetime, s.time.id=s.time.id, 
+                edatetime=edatetime, e.time.id=e.time.id))
+}
+
 # Function: get.perf()
 #     Get detector performance, given start and end times, a VDS and a 
 #     performance variable.
-get.perf <- function(vds, quantity, times){
+get.perf <- function(vds, quantity, mm.str, yyyy.str){
+    # Find start and end times for the query.
+    times <- get.times(mm.str, yyyy.str)
+    
     # Create the data folder if needed.
     my.dir <- file.path(data.folder, 
                         node.name, content, form.tab, vds, quantity)
@@ -166,32 +195,6 @@ get.perf <- function(vds, quantity, times){
     return(perf)
 }
 
-# Function: get.times()
-#     Return a list of start and end time variables, given month and year.
-get.times <- function(mm.str, yyyy.str) {
-    # Combine variables into a "start date" (sdate) and time string
-    sdate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"))
-    sdate.str <- as.character(sdate)
-    sdatetime <- paste(sdate.str, '+00:00', sep='')
-    
-    # Calculate s_time_id (Unix time integer) from sdate.str
-    s.time.id <- as.character(as.integer(as.POSIXct(sdate.str, 
-                                                    origin="1970-01-01", 
-                                                    tz = "GMT")))
-    
-    # Combine variables into a "end date" (edate) and time string
-    edate <- as.Date(as.yearmon(paste(yyyy.str, mm.str, sep=''), "%Y%m"), frac=1)
-    edate.str <- as.character(edate)
-    edatetime <- paste(edate.str, '+23:59', sep='')
-    
-    # Calculate e_time_id (Unix time integer) from edate.str
-    e.time.id <- as.character(as.integer(as.POSIXct(edate.str, 
-                                                    origin="1970-01-01", 
-                                                    tz = "GMT") + 86340))
-    return(list(sdatetime=sdatetime, s.time.id=s.time.id, 
-                edatetime=edatetime, e.time.id=e.time.id))
-}
-
 # Page configuration - query specification for type of report page
 # (Continued from above...)
 node.name <- 'VDS'
@@ -220,13 +223,10 @@ direction <- 'E'
 mm.str <- '01'
 yyyy.str <- '2015'
 
-# Find start and end times for the query.
-times <- get.times(mm.str, yyyy.str)
-
 # Get performance data for all VDSs and quantities for a freeway and month.
 vds.list <- unique(freeway.health$VDS)
 result <- adply(expand.grid(vds.list, quantities), 1, 
-                function(x) get.perf(x$VDS, x$quantity, times))
+                function(x) get.perf(x$VDS, x$quantity, mm.str, yyyy.str))
 
 # Save results to a file.
 write.csv(result, 
